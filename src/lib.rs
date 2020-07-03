@@ -3,12 +3,12 @@ mod tests {
     use super::Version;
     #[test]
     fn from_str() {
-        assert_eq!(Version::new(0, 1, 0), Version::from_str("0.1").unwrap());
-        assert_eq!(Version::new(0, 1, 0), Version::from_str("0.1.0").unwrap());
-        assert_eq!(None, Version::from_str("0.1."));
-        assert_eq!(None, Version::from_str("0.."));
-        assert_eq!(None, Version::from_str(".."));
-        assert_eq!(None, Version::from_str("0.1.0.0"));
+        assert_eq!(Version::new(0, 1, 0), "0.1".parse().ok().unwrap());
+        assert_eq!(Version::new(0, 1, 0), "0.1.0".parse().ok().unwrap());
+        assert!("0.1.".parse::<Version>().is_err());
+        assert!("0..".parse::<Version>().is_err());
+        assert!("..".parse::<Version>().is_err());
+        assert!("0.1.0.0".parse::<Version>().is_err());
     }
 
     #[test]
@@ -157,33 +157,79 @@ impl From<u8> for Version {
     }
 }
 
-impl Version {
-    pub fn from_str(string: &str) -> Option<Self> {
+impl From<(usize, usize, usize)> for Version {
+    fn from(elem: (usize, usize, usize)) -> Self {
+        Version {
+            major: elem.0 as u32,
+            minor: elem.1 as u32,
+            revision: elem.2 as u32,
+        }
+    }
+}
+
+impl From<(usize, usize)> for Version {
+    fn from(elem: (usize, usize)) -> Self {
+        Version {
+            major: elem.0 as u32,
+            minor: elem.1 as u32,
+            revision: 0,
+        }
+    }
+}
+
+impl From<usize> for Version {
+    fn from(elem: usize) -> Self {
+        Version {
+            major: elem as u32,
+            minor: 0,
+            revision: 0,
+        }
+    }
+}
+
+/// A parse error for Version
+pub enum VersionError {
+    /// Attempted to parse an empty string
+    Empty,
+    /// The string contained too many decimals, contains the number of decimals
+    TooManyDecimals(usize),
+    /// Encountered a num::ParseIntError
+    ParseError(std::num::ParseIntError),
+}
+
+impl From<std::num::ParseIntError> for VersionError {
+    fn from(e: std::num::ParseIntError) -> Self {
+        Self::ParseError(e)
+    }
+}
+
+impl std::str::FromStr for Version {
+    type Err = VersionError;
+    fn from_str(string: &str) -> Result<Self, Self::Err> {
         let mut three = string.split('.');
         let res: Version;
         if let Some(major) = three.next() {
             if let Some(minor) = three.next() {
                 if let Some(revision) = three.next() {
-                    res = Version::from((
-                        major.parse::<u32>().ok()?,
-                        minor.parse().ok()?,
-                        revision.parse().ok()?,
-                    ));
+                    res = Version::from((major.parse::<u32>()?, minor.parse()?, revision.parse()?));
                 } else {
-                    res = Version::from((major.parse::<u32>().ok()?, minor.parse().ok()?, 0));
+                    res = Version::from((major.parse::<u32>()?, minor.parse()?, 0));
                 }
             } else {
-                res = Version::from((major.parse::<u32>().ok()?, 0, 0));
+                res = Version::from((major.parse::<u32>()?, 0, 0));
             }
         } else {
-            return None;
+            return Err(VersionError::Empty);
         }
         if three.next() == None {
-            Some(res)
+            Ok(res)
         } else {
-            None
+            Err(VersionError::TooManyDecimals(4 + three.count()))
         }
     }
+}
+impl Version {
+    /// Creates a new version
     pub fn new(major: u32, minor: u32, revision: u32) -> Self {
         Version {
             major,
@@ -191,6 +237,8 @@ impl Version {
             revision,
         }
     }
+
+    /// Copies the version, updating the major number
     pub fn with_major(&self, major: u32) -> Self {
         Self {
             major: major,
@@ -198,6 +246,8 @@ impl Version {
             revision: self.revision,
         }
     }
+
+    /// Copies the version, updating the minor number
     pub fn with_minor(&self, minor: u32) -> Self {
         Self {
             major: self.major,
@@ -205,6 +255,8 @@ impl Version {
             revision: self.revision,
         }
     }
+
+    /// Copies the version, updating the revision number
     pub fn with_revision(&self, revision: u32) -> Self {
         Self {
             major: self.major,

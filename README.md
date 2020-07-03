@@ -8,10 +8,10 @@ Obligatory Example:
 ```rust
 use version::Version;
 let v1_2_3 = Version::new(1,2,3);
-assert!(v1_2_3 == Version::from_str("1.2.3").unwrap());
+assert!(v1_2_3 == "1.2.3".parse()?);
 assert!(v1_2_3 < Version::new(1,2,12));
 assert!(v1_2_3 > Version::from((1,2,0));
-let (x, y, z) = random_u16_triple();
+let (x, y, z) = random_usize_triple();
 assert!(Version::from(x,y,z), (x,y,z).into());
 ```
 
