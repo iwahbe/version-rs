@@ -1,10 +1,14 @@
 [package]
 name = "version-rs"
 version = "0.1.0"
-authors = ["Ian Wahbe <ian@wahbe.com>"]
+authors = ["Ian Wahbe <@iwahbe>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "MIT OR Apache-2.0"
+description = "A struct for Versions, with the methods you expect"
+repository = "https://github.com/iwahbe/version-rs"
+readme = "README.md"
+keywords = ["version", "graphics"]
+categories = ["data-structures"]
 
 [feature]
 default = []
@@ -13,3 +17,5 @@ serde = ["serde/derive"]
 [dependencies]
 serde = { version = "1", optional = true }
 
+[badges]
+github = { repository = "...", branch = "master" }
