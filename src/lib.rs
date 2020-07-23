@@ -19,7 +19,7 @@ mod tests {
 }
 
 #[cfg(not(feature = "serde"))]
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Clone)]
 pub struct Version {
     pub major: u32,
     pub minor: u32,
@@ -28,9 +28,11 @@ pub struct Version {
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
 #[cfg(feature = "serde")]
-#[Derive(Serialize, Deserialize)]
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Clone, Deserialize, Serialize)]
+#[serde(into = "String")]
+#[serde(try_from = "&str")]
 pub struct Version {
     pub major: u32,
     pub minor: u32,
@@ -188,6 +190,7 @@ impl From<usize> for Version {
 }
 
 /// A parse error for Version
+#[derive(Debug)]
 pub enum VersionError {
     /// Attempted to parse an empty string
     Empty,
@@ -197,9 +200,27 @@ pub enum VersionError {
     ParseError(std::num::ParseIntError),
 }
 
+impl std::fmt::Display for VersionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        match self {
+            VersionError::Empty => write!(f, "VersionError::Empty"),
+            VersionError::TooManyDecimals(d) => {
+                write!(f, "VersionError::TooManyDecimals => found {}", d)
+            }
+            VersionError::ParseError(p) => write!(f, "VersionError::ParseError => {}", p),
+        }
+    }
+}
+
 impl From<std::num::ParseIntError> for VersionError {
     fn from(e: std::num::ParseIntError) -> Self {
         Self::ParseError(e)
+    }
+}
+
+impl Into<String> for Version {
+    fn into(self) -> String {
+        format!("{:?}", self)
     }
 }
 
@@ -228,6 +249,15 @@ impl std::str::FromStr for Version {
         }
     }
 }
+
+impl std::convert::TryFrom<&str> for Version {
+    type Error = VersionError;
+
+    fn try_from(string: &str) -> Result<Self, Self::Error> {
+        std::str::FromStr::from_str(string)
+    }
+}
+
 impl Version {
     /// Creates a new version
     pub fn new(major: u32, minor: u32, revision: u32) -> Self {

@@ -7,7 +7,7 @@ license = "MIT OR Apache-2.0"
 description = "A struct for Versions, with the methods you expect"
 repository = "https://github.com/iwahbe/version-rs"
 readme = "README.md"
-keywords = ["version", "graphics"]
+keywords = ["version"]
 categories = ["data-structures"]
 
 [feature]
