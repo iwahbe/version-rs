@@ -15,6 +15,7 @@ mod tests {
     fn derive() {
         let one: u32 = 1;
         assert_eq!(Version::from((one, 2, 3)), (one, 2, 3).into());
+        assert!(Version::from(1) < Version::from(2));
     }
 }
 
@@ -69,122 +70,54 @@ impl std::cmp::Ord for Version {
     }
 }
 
-impl From<(u32, u32, u32)> for Version {
-    fn from(elem: (u32, u32, u32)) -> Self {
-        Version {
-            major: elem.0,
-            minor: elem.1,
-            revision: elem.2,
+// conflicting dependency issues
+// impl<N: std::convert::Into<u32>> From<N> for Version {
+//     fn from(elem: N) -> Self {
+//         Version {
+//             major: elem.into(),
+//             minor: 0,
+//             revision: 0,
+//         }
+//     }
+// }
+
+macro_rules! primitive_from {
+    ($type:tt) => {
+        impl From<$type> for Version {
+            fn from(elem: $type) -> Self {
+                Version {
+                    major: elem as u32,
+                    minor: 0,
+                    revision: 0,
+                }
+            }
         }
-    }
+    };
+
+    ($first:tt, $($rest:tt),+) => {
+        primitive_from! {$first}
+        primitive_from! {$($rest),+}
+    };
 }
 
-impl From<(u32, u32)> for Version {
-    fn from(elem: (u32, u32)) -> Self {
+primitive_from! {u32, u8, u16, i16, i8, i32, usize}
+
+impl<N: std::convert::Into<u32>> From<(N, N)> for Version {
+    fn from(elem: (N, N)) -> Self {
         Version {
-            major: elem.0,
-            minor: elem.1,
+            major: elem.0.into(),
+            minor: elem.1.into(),
             revision: 0,
         }
     }
 }
 
-impl From<u32> for Version {
-    fn from(elem: u32) -> Self {
+impl<N: std::convert::Into<u32>> From<(N, N, N)> for Version {
+    fn from(elem: (N, N, N)) -> Self {
         Version {
-            major: elem,
-            minor: 0,
-            revision: 0,
-        }
-    }
-}
-
-impl From<(u16, u16, u16)> for Version {
-    fn from(elem: (u16, u16, u16)) -> Self {
-        Version {
-            major: elem.0 as u32,
-            minor: elem.1 as u32,
-            revision: elem.2 as u32,
-        }
-    }
-}
-
-impl From<(u16, u16)> for Version {
-    fn from(elem: (u16, u16)) -> Self {
-        Version {
-            major: elem.0 as u32,
-            minor: elem.1 as u32,
-            revision: 0,
-        }
-    }
-}
-
-impl From<u16> for Version {
-    fn from(elem: u16) -> Self {
-        Version {
-            major: elem as u32,
-            minor: 0,
-            revision: 0,
-        }
-    }
-}
-
-impl From<(u8, u8, u8)> for Version {
-    fn from(elem: (u8, u8, u8)) -> Self {
-        Version {
-            major: elem.0 as u32,
-            minor: elem.1 as u32,
-            revision: elem.2 as u32,
-        }
-    }
-}
-
-impl From<(u8, u8)> for Version {
-    fn from(elem: (u8, u8)) -> Self {
-        Version {
-            major: elem.0 as u32,
-            minor: elem.1 as u32,
-            revision: 0,
-        }
-    }
-}
-
-impl From<u8> for Version {
-    fn from(elem: u8) -> Self {
-        Version {
-            major: elem as u32,
-            minor: 0,
-            revision: 0,
-        }
-    }
-}
-
-impl From<(usize, usize, usize)> for Version {
-    fn from(elem: (usize, usize, usize)) -> Self {
-        Version {
-            major: elem.0 as u32,
-            minor: elem.1 as u32,
-            revision: elem.2 as u32,
-        }
-    }
-}
-
-impl From<(usize, usize)> for Version {
-    fn from(elem: (usize, usize)) -> Self {
-        Version {
-            major: elem.0 as u32,
-            minor: elem.1 as u32,
-            revision: 0,
-        }
-    }
-}
-
-impl From<usize> for Version {
-    fn from(elem: usize) -> Self {
-        Version {
-            major: elem as u32,
-            minor: 0,
-            revision: 0,
+            major: elem.0.into(),
+            minor: elem.1.into(),
+            revision: elem.2.into(),
         }
     }
 }

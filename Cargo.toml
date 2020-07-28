@@ -10,9 +10,9 @@ readme = "README.md"
 keywords = ["version"]
 categories = ["data-structures"]
 
-[feature]
+[features]
 default = []
-serde = ["serde/derive"]
+serde-derive = ["serde/derive"]
 
 [dependencies]
 serde = { version = "1", optional = true }
