@@ -160,14 +160,47 @@ impl Into<String> for Version {
 impl std::str::FromStr for Version {
     type Err = VersionError;
     fn from_str(string: &str) -> Result<Self, Self::Err> {
-        let mut three = string.split('.');
+        let mut three;
+        #[cfg(feature = "lossy")]
+        {
+            three = string.split(|x| match x {
+                '0'..='9' => false,
+                _ => true,
+            });
+        }
+        #[cfg(not(feature = "lossy"))]
+        {
+            three = string.split('.');
+        }
         let res: Version;
         if let Some(major) = three.next() {
             if let Some(minor) = three.next() {
                 if let Some(revision) = three.next() {
-                    res = Version::from((major.parse::<u32>()?, minor.parse()?, revision.parse()?));
+                    #[cfg(feature = "lossy")]
+                    {
+                        res = Version::from((
+                            major.parse::<u32>()?,
+                            minor.parse().unwrap_or(0),
+                            revision.parse().unwrap_or(0),
+                        ));
+                    }
+                    #[cfg(not(feature = "lossy"))]
+                    {
+                        res = Version::from((
+                            major.parse::<u32>()?,
+                            minor.parse()?,
+                            revision.parse()?,
+                        ));
+                    }
                 } else {
-                    res = Version::from((major.parse::<u32>()?, minor.parse()?, 0));
+                    #[cfg(feature = "lossy")]
+                    {
+                        res = Version::from((major.parse::<u32>()?, minor.parse().unwrap_or(0), 0));
+                    }
+                    #[cfg(not(feature = "lossy"))]
+                    {
+                        res = Version::from((major.parse::<u32>()?, minor.parse()?, 0));
+                    }
                 }
             } else {
                 res = Version::from((major.parse::<u32>()?, 0, 0));
@@ -175,11 +208,14 @@ impl std::str::FromStr for Version {
         } else {
             return Err(VersionError::Empty);
         }
+        #[cfg(not(feature = "lossy"))]
         if three.next() == None {
             Ok(res)
         } else {
             Err(VersionError::TooManyDecimals(4 + three.count()))
         }
+        #[cfg(feature = "lossy")]
+        Ok(res)
     }
 }
 
